@@ -55,6 +55,9 @@ using CryptoPP::AAD_CHANNEL;
 #include <cryptopp/osrng.h>
 using CryptoPP::AutoSeededRandomPool;
 
+#pragma mark -
+#pragma mark AE/AD wrappers 
+
 ae_error_t encrypt_ae(AE_Ciphertext** cts, unsigned char* key, AE_Plaintext* pts) {
     ae_error_t result;
     
@@ -268,4 +271,25 @@ ae_error_t decrypt_aead(AE_Plaintext** pts, unsigned char* key, AE_Ciphertext* c
         result.error_msg = e.what();
         return result;
 	}    
+}
+
+#pragma mark -
+#pragma mark HKDF 
+
+void derivate_encryption_key(unsigned char *key, size_t keylen, unsigned char *salt, size_t salt_len, element_t bes_key) {
+    
+    int keysize = element_length_in_bytes(bes_key);
+    unsigned char *buf = new unsigned char[keysize];
+    
+    element_to_bytes(buf, bes_key);
+    
+    CryptoPP::HMACKeyDerivationFunction<CryptoPP::SHA256> hkdf;
+    hkdf.DeriveKey(
+                   key, keylen, // Derived key
+                   buf, keysize, // input key material (ikm)
+                   salt, salt_len, // Salt
+                   NULL, 0 // context information
+                   );
+    
+    delete[] buf;
 }
